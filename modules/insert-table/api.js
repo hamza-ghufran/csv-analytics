@@ -5,7 +5,7 @@ const mysql = require('../../utils/knex').mysql;
 
 const CSVReader = require('../../utils/csvParser')
 const CSV_FILE_PATH = './utils/US_Accidents_Dec19.csv'
-require('../../utils/worker');
+// require('../../utils/worker');
 
 const log = require('../../utils/logger').log
 var log_id = 0
