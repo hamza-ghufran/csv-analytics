@@ -1,59 +1,40 @@
 'use strict'
 
 const fs = require('fs')
-const csv = require('csv-stream')
-const through2 = require('through2')
+const parse = require('fast-csv').parse;
 
 class CSVReader {
-  constructor(filename, batchSize, columns, offset) {
+  constructor(props) {
     this.data = []
-    this.lineNumber = 0
-    this.columns = columns
-    this.batchSize = batchSize || 1000
-    this.offset = offset
-    this.reader = fs.createReadStream(filename)
-    this.show_status = true
+    this.cb = props.cb
+    this.line_number = 0
+    this.offset = props.offset
+    this.columns = props.columns
+    this.batch_size = props.batch_size || 1000
+    this.reader = fs.createReadStream(props.file_path)
   }
 
   read(callback) {
     this.reader
-      .pipe(csv.createStream({
-        endLine: '\n',
-        columns: this.columns,
-        escapeChar: '"',
-        enclosedChar: '"'
-      }))
-      .pipe(through2({ objectMode: true }, (row, enc, cb) => {
-        ++this.lineNumber
+      .pipe(
+        parse({ headers: true })
+          .on('error', error => console.error(error))
+          .on('data', row => {
+            ++this.line_number
 
-        if (this.lineNumber < (this.offset + 1) || this.lineNumber == 1) { //skip line containing headers
-          return cb(null, true)
-        }
+            if (this.line_number < this.offset) {
+              return //skip to resume op
+            }
 
-        if (this.data.length != 0 && this.data.length % this.batchSize === 0) {
-          this.reader.pause();
-          callback(this.data)
-        }
+            this.data.push(row)
 
-        this.data.push(row)
-        return cb()
-      }))
-      .on('data', data => {
-        if (this.offset && this.show_status) {
-          console.log(`SKIPPING ${this.offset} ROWS`)
-          this.show_status = false
-        }
-      })
-      .on('end', () => {
-      })
-      .on('error', err => {
-        console.error(err)
-      })
-  }
-
-  continue() {
-    this.data = []
-    this.reader.resume()
+            if (this.data.length != 0 && this.data.length % this.batch_size === 0) {
+              callback(this.data)
+              this.data.length = 0
+            }
+          })
+          .on('end', (rowCount) => { return this.cb() })
+      )
   }
 }
 

@@ -3,7 +3,7 @@
 const DATA_TABLE = 'Table-A'
 const STATUS_TABLE = 'Table-B'
 
-const DEFAULT_BATCH_SIZE = 2000
+const DEFAULT_BATCH_SIZE = 5000
 
 const STATUS_TABLE_HEADERS = ['id', 'status', 'batch_size', 'completed_at'];
 
