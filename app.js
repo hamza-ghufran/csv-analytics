@@ -85,11 +85,8 @@ async.auto({
     'get_current_status_count',
     function (result, cb) {
       let dataObj = {
-        data_table: DATA_TABLE,
-        report_table: STATUS_TABLE,
         batch_size: DEFAULT_BATCH_SIZE,
         offset: result.get_current_status_count.current_status_line_count,
-        table_headers: result.list_table_headers_from_csv.table_headers,
       }
 
       insertIntoTable(dataObj, (err, res) => {
