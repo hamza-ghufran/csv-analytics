@@ -7,9 +7,10 @@ const mysql = require('../../utils/knex').mysql;
 const CSVReader = require('../../utils/csvParser')
 const CSV_FILE_PATH = './utils/US_Accidents_Dec19.csv'
 
-const _cloneDeep = require('lodash.clonedeep');
-const log = require('../../utils/logger').log
 var log_id = 0
+const log = require('../../utils/logger').log
+const _cloneDeep = require('lodash.clonedeep');
+const MAX_WORKERS = require('../../utils/constant').MAX_WORKERS
 
 const insertIntoTable = function (data, callback) {
   let {
@@ -20,8 +21,14 @@ const insertIntoTable = function (data, callback) {
   } = data;
 
   let queue = async_queue(function (task, next) {
-    task.run(task.data, () => next())
-  }, 1)
+    task.run(task.data, function (err, result) {
+      if (err) {
+        console.log(err.stack)
+      }
+      next()
+
+    }, MAX_WORKERS)
+  })
 
   async_auto({
     insert: (cb) => {
@@ -41,7 +48,7 @@ const insertIntoTable = function (data, callback) {
             report_table,
           }
 
-          queue.push({ data: dataObj, run: insertOperation }, function () {})
+          queue.push({ data: dataObj, run: insertOperation }, function () { })
         })
     },
   }, function (error, results) {

@@ -8,6 +8,7 @@ class CSVReader {
     this.data = []
     this.cb = props.cb
     this.line_number = 0
+    this.show_status = true
     this.offset = props.offset
     this.columns = props.columns
     this.batch_size = props.batch_size || 1000
@@ -22,8 +23,12 @@ class CSVReader {
           .on('data', row => {
             ++this.line_number
 
-            if (this.line_number < this.offset) {
-              return //skip to resume op
+            if (this.line_number <= this.offset) {
+              if (this.show_status) {
+                this.show_status = false
+                console.log(`SKIPPING ${this.offset} ROWS, HOLD ON`)
+              }
+              return
             }
 
             this.data.push(row)

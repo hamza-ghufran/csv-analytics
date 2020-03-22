@@ -18,9 +18,6 @@ const {
   DEFAULT_BATCH_SIZE
 } = require('./utils/constant')
 
-//suppress insert-table/api line-54
-process.on('unhandledRejection', (err, p) => { return });
-
 async.auto({
   list_table_headers_from_csv: (cb) => {
     csvHeaders({
@@ -111,6 +108,8 @@ async.auto({
 
   console.log({ results })
 })
+
+process.on('unhandledRejection', (err, p) => { return });
 
 
 
