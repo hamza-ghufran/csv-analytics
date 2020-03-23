@@ -3,8 +3,8 @@
 const DATA_TABLE = 'Table-A'
 const STATUS_TABLE = 'Table-B'
 
-const MAX_WORKERS = 1
-const DEFAULT_BATCH_SIZE = 5000
+const MAX_WORKERS = 5 // change to 1 for uploading in order
+const DEFAULT_BATCH_SIZE = 3000
 const STATUS_TABLE_HEADERS = ['id', 'status', 'batch_size', 'completed_at'];
 
 exports.DATA_TABLE = DATA_TABLE

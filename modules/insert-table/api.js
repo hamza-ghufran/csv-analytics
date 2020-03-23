@@ -39,7 +39,7 @@ const insertIntoTable = function (data, callback) {
     }
 
     queue.push(dataObj, (results) => {
-      // console.log(results)
+      // parser.continue()
     })
   })
 }
