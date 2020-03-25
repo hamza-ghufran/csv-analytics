@@ -14,8 +14,10 @@ const {
 const {
   DATA_TABLE,
   STATUS_TABLE,
+  ANALYSIS_TABLE,
+  DEFAULT_BATCH_SIZE,
   STATUS_TABLE_HEADERS,
-  DEFAULT_BATCH_SIZE
+  ANALYSIS_TABLE_HEADERS,
 } = require('./utils/constant')
 
 async.auto({
@@ -48,7 +50,7 @@ async.auto({
       return cb(null, res)
     })
   }],
-  create_status_table: ['list_table_headers_from_csv', function (result, cb) {
+  create_status_table: (cb) => {
     let dataObj = {
       table_name: STATUS_TABLE,
       table_headers: STATUS_TABLE_HEADERS
@@ -62,7 +64,22 @@ async.auto({
 
       return cb(null, { headers: res.results })
     })
-  }],
+  },
+  create_analysis_table: (cb) => {
+    let dataObj = {
+      table_name: ANALYSIS_TABLE,
+      table_headers: ANALYSIS_TABLE_HEADERS
+    }
+
+    createTable(dataObj, (err, res) => {
+      if (err) {
+        console.log('ERROR WHILE CREATING TABLE', err)
+        return cb(err)
+      }
+
+      return cb(null, { headers: res.results })
+    })
+  },
   get_current_status_count: ['create_status_table', function (result, cb) {
     let dataObj = {
       table_name: STATUS_TABLE,
@@ -79,10 +96,11 @@ async.auto({
     })
   }],
   insert_into_data_table: [
-    'list_table_headers_from_csv',
     'create_data_table',
     'create_status_table',
+    'create_analysis_table',
     'get_current_status_count',
+    'list_table_headers_from_csv',
     function (result, cb) {
       let dataObj = {
         batch_size: DEFAULT_BATCH_SIZE,
@@ -106,7 +124,7 @@ async.auto({
   console.log({ results })
 })
 
-process.on('unhandledRejection', (err, p) => { return });
+// process.on('unhandledRejection', (err, p) => { return });
 
 
 

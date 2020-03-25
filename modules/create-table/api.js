@@ -2,7 +2,7 @@
 
 const async = require('async')
 const mysql = require('../../utils/knex').mysql
-const { checkIfTableExists }= require('../check-if-table-exists/api')
+const { checkIfTableExists } = require('../check-if-table-exists/api')
 
 const createTable = function (data, _cb) {
   let { table_name, table_headers } = data

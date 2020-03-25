@@ -1,46 +1,65 @@
 'use strict'
 
+const { cloneDeep } = require('lodash');
 const async_auto = require('async').auto;
 const async_queue = require('async').queue;
-const mysql = require('../../utils/knex').mysql;
 
+const mysql = require('../../utils/knex').mysql
 const CSVReader = require('../../utils/csvParser')
 const CSV_FILE_PATH = './utils/US_Accidents_Dec19.csv'
+const runAnalysis = require('../data-analysis/api').runAnalysis
 
 var log_id = 0
 const log = require('../../utils/logger').log
-const _cloneDeep = require('lodash.clonedeep');
 const { MAX_WORKERS, DATA_TABLE, STATUS_TABLE } = require('../../utils/constant')
 
-const insertIntoTable = function (data, callback) {
+const insertIntoTable = function (data, _cb) {
   let { batch_size, offset } = data;
 
   const parser = new CSVReader({
-    cb: callback,
+    cb: _cb,
     offset: offset,
     batch_size: batch_size,
     file_path: CSV_FILE_PATH,
   })
 
-
-  let queue = async_queue(function (parsed_data, next) {
+  let insert_queue = async_queue(function (parsed_data, next) {
     insert(parsed_data, (err, results) => {
       if (err) {
-        return callback(err.stack)
+        return _cb(err.stack)
       }
-      next(results)
+      next()
     })
   }, MAX_WORKERS)
 
+  let analysis_queue = async_queue(function (parsed_data, next) {
+    runAnalysis(parsed_data, (err, results) => {
+      if (err) {
+        return _cb(err.stack)
+      }
+      next()
+    })
+  }, 1)
 
   parser.read((batch) => {
     const dataObj = {
-      batch: _cloneDeep(batch),
+      batch: cloneDeep(batch),
     }
 
-    queue.push(dataObj, (results) => {
-      // parser.continue()
-    })
+    /**
+     *  To insert data into table A & B
+     *  4 processes run in parallel
+     */
+    insert_queue.push(dataObj)
+
+    /**
+     * Inserts data into table C
+     * Performs operation on the table in a sync manner, 
+     * with only one process running at a time
+     * [TODO] fix memory issue.
+     * temporary fix : run app with --max_old_space_size=4096
+     */
+    analysis_queue.push(dataObj)
   })
 }
 
