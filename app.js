@@ -86,6 +86,7 @@ async.auto({
     function (result, cb) {
       let dataObj = {
         batch_size: DEFAULT_BATCH_SIZE,
+        headers: result.list_table_headers_from_csv.table_headers,
         offset: result.get_current_status_count.current_status_line_count,
       }
 
@@ -106,7 +107,7 @@ async.auto({
   console.log({ results })
 })
 
-process.on('unhandledRejection', (err, p) => { return });
+// process.on('unhandledRejection', (err, p) => { return });
 
 
 

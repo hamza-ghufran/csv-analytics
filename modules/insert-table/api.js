@@ -12,36 +12,75 @@ const log = require('../../utils/logger').log
 const _cloneDeep = require('lodash.clonedeep');
 const { MAX_WORKERS, DATA_TABLE, STATUS_TABLE } = require('../../utils/constant')
 
+const fs = require('fs')
+var stats = fs.statSync(CSV_FILE_PATH)
+const cluster = require('cluster');
+
+// process.env.UV_THREADPOOL_SIZE = 50;
+
 const insertIntoTable = function (data, callback) {
-  let { batch_size, offset } = data;
+  let { batch_size, offset, headers } = data;
 
-  const parser = new CSVReader({
-    cb: callback,
-    offset: offset,
-    batch_size: batch_size,
-    file_path: CSV_FILE_PATH,
-  })
+  var fileSizeInBytes = stats["size"]
 
+  let one_part_size = fileSizeInBytes / 4
 
-  let queue = async_queue(function (parsed_data, next) {
-    insert(parsed_data, (err, results) => {
-      if (err) {
-        return callback(err.stack)
-      }
-      next(results)
-    })
-  }, MAX_WORKERS)
+  if (cluster.isMaster) {
 
+    let parsers = []
+    let workers = []
 
-  parser.read((batch) => {
-    const dataObj = {
-      batch: _cloneDeep(batch),
+    for (let i = 0; i < 4; i++) {
+      workers.push(cluster.fork());
+      //here are the masters
+
+      cluster.on('online', function (worker) {
+        console.log('Worker ' + worker.process.pid + ' is listening');
+      });
+
+      workers[i].on('message', (id) => {
+        workers[i].send({ chat: 'Ok worker', file_size: one_part_size, index: i, process: id });
+      })
     }
+  }
 
-    queue.push(dataObj, (results) => {
-      // parser.continue()
-    })
-  })
+  else {
+    process.send(process.pid)
+    process.on('message', function (msg) {
+
+      console.log(msg.chat, msg.id)
+
+      let parser = new CSVReader({
+        cb: () => { console.log(index + ' is done') },
+        offset: offset,
+        headers: headers,
+        batch_size: batch_size,
+        file_path: CSV_FILE_PATH,
+        start: msg.file_size * msg.index,
+        end: msg.file_size * (msg.index + 1),
+      })
+
+      let queue = async_queue(function (parsed_data, next) {
+        insert(parsed_data, (err, results) => {
+          if (err) {
+            return callback(err.stack)
+          }
+          next(results)
+        })
+      }, 10)
+
+      parser.read((batch) => {
+        const dataObj = {
+          batch: _cloneDeep(batch),
+        }
+
+        queue.push(dataObj, (results) => {
+          // parser.continue()
+        })
+
+      })
+    });
+  }
 }
 
 const insert = function (data, _cb) {

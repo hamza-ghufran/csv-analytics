@@ -2,11 +2,11 @@ const cluster = require('cluster');
 
 let workers = [];
 
-const setupWorkerProcesses = () => {
+export const setupWorkerProcesses = () => {
   let numCores = require('os').cpus().length;
-  console.log('Master cluster setting up ' + (numCores / 2) + ' workers');
+  console.log('Master cluster setting up ' + (numCores) + ' workers');
 
-  for (let i = 0; i < (numCores / 2); i++) {
+  for (let i = 0; i < (numCores); i++) {
     workers.push(cluster.fork());
     //here are the masters
 
@@ -36,5 +36,3 @@ const setupServer = () => {
     setupWorkerProcesses();
   }
 };
-
-setupServer(true)
