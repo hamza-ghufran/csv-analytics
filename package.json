@@ -21,7 +21,7 @@
     "fast-csv": "^4.3.6",
     "fs": "0.0.1-security",
     "iconv-lite": "^0.5.1",
-    "knex": "^0.20.11",
+    "knex": "^2.4.0",
     "lodash.clonedeep": "^4.5.0",
     "mysql": "^2.18.1",
     "through2": "^3.0.1"
